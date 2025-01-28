@@ -1,0 +1,314 @@
+#Summary Linked List
+.data:
+	sizeInput: .asciiz "Enter the size of the linked list: "
+	keyInput: .asciiz "Enter the product key: "
+	copiesInput: .asciiz "Enter the number of copies sold: "
+	summaryHeader: .asciiz "\n\nSummary LinkedList:"
+	size: .asciiz "\nSize: "
+	seperator: .asciiz "\n------------------------------"
+	keyLabel: .asciiz "\nKey: "
+	copyLabel: .asciiz "\nNumber of copies sold: "
+	
+.text:
+
+main: 
+	la $a0, sizeInput
+	addi $v0, $0, 4
+	syscall
+	addi $v0, $0, 5
+	syscall
+	addi $a0, $v0, 0 # a0 now holds the size of the linkedlist as argument
+	
+	blt $a0, 1, main # dont let 0 to be an input
+	
+	jal createLinkedList
+	addi $t0, $v0, 0 # s3 holds the head ptr of user created linkedlist (in main)
+	addi $a0, $v0, 0 # pass this argument to print linkedList
+	jal printLinkedList
+	addi $a0, $t0, 0 # pass the head addr of user created list to summary list function
+	jal summaryLinkedList
+	addi $a0, $v0, 0 # keep size of sum list
+	addi $a1, $v1, 0 # keep sum list head
+	jal printSumList
+	addi $v0, $0, 10
+	syscall
+	
+createLinkedList:
+	addi	$sp, $sp, -28
+	sw	$s0, 24($sp) # total node number
+	sw	$s1, 20($sp) # node counter 
+	sw	$s2, 16($sp) # front ptr
+	sw	$s3, 12($sp)  # head addr
+	sw	$s4, 8($sp) # key value
+	sw 	$s5, 4($sp) # copy num
+	sw	$ra, 0($sp)
+	
+	addi	$s0, $a0, 0	# Node number
+	addi	$s1, $0, 1		# $s1: Node counter
+
+	addi	$a0, $0, 12 # 4 bit - hold key, 4 bit-hold copy num, 4-bit next
+	addi	$v0, $0, 9 # dynamically allocate 8 bit in memory
+	syscall
+
+	addi	$s2, $v0, 0
+	addi	$s3, $v0, 0
+	
+	# create first node
+	la $a0, keyInput
+	addi $v0, $0, 4
+	syscall
+	addi $v0, $0, 5
+	syscall
+	
+	addi $s4, $v0, 0 # keep the value of key
+	la $a0, copiesInput
+	addi $v0, $0, 4
+	syscall
+	addi $v0, $0, 5
+	syscall
+	addi $s5, $v0, 0 # keep the value of copy num
+	
+	sw $s4, 0($s2)
+	sw $s5, 4($s2)
+	j addNode
+
+addNode:
+	beq	$s1, $s0, allDone
+	addi	$s1, $s1, 1
+		
+	addi	$a0, $0, 12 		
+	addi	$v0, $0, 9
+	syscall
+	sw	$v0, 8($s2)
+
+	addi	$s2, $v0, 0	# $s2 now points to the new node.
+	
+	la $a0, keyInput
+	addi $v0, $0, 4
+	syscall
+	addi $v0, $0, 5
+	syscall
+	addi $s4, $v0, 0 # keep the value of key
+	
+	la $a0, copiesInput
+	addi $v0, $0, 4
+	syscall
+	addi $v0, $0, 5
+	syscall
+	addi $s5, $v0, 0 # keep the value of copy num
+	
+	sw $s4, 0($s2)
+	sw $s5, 4($s2)
+		
+	j addNode
+	
+allDone:
+	sw	$zero, 8($s2)
+	addi	$v0, $s3, 0	# return the head ptr
+	
+	lw	$ra, 0($sp)
+	lw	$s4, 4($sp)
+	lw	$s3, 8($sp)
+	lw	$s2, 12($sp)
+	lw	$s1, 16($sp)
+	lw	$s0, 20($sp)
+	addi	$sp, $sp, 24
+	
+	jr	$ra
+	
+printLinkedList:
+	addi	$sp, $sp, -20
+	sw	$s0, 16($sp)
+	sw	$s1, 12($sp)
+	sw	$s2, 8($sp)
+	sw	$s3, 4($sp)
+	sw	$ra, 0($sp) 	
+	addi $s0, $a0, 0	# s0 holds the current ptr
+	j printNode
+
+printNode:
+	beq $s0, $zero, printFinished
+	lw $s1, 8($s0) # next addr
+	lw $s2, 0($s0) # key
+	lw $s3, 4($s0) # copy num
+	
+	la $a0, seperator
+	addi $v0, $0, 4
+	syscall
+	
+	la $a0, keyLabel
+	addi $v0, $0, 4
+	syscall
+	addi	$a0, $s2, 0 
+	addi	$v0, $0, 1
+	syscall
+	
+	la $a0, copyLabel
+	addi $v0, $0, 4
+	syscall
+	addi	$a0, $s3, 0
+	addi	$v0, $0, 1
+	syscall
+	
+	addi $s0, $s1, 0
+	
+	j printNode
+
+printFinished:
+	lw	$ra, 0($sp)
+	lw	$s3, 4($sp)
+	lw	$s2, 8($sp)
+	lw	$s1, 12($sp)
+	lw	$s0, 16($sp)
+	addi	$sp, $sp, 20
+	jr	$ra
+	
+summaryLinkedList:
+	addi	$sp, $sp, -36
+	sw	$s0, 32($sp) 
+	sw	$s1, 28($sp)  
+	sw	$s2, 24($sp) 
+	sw	$s3, 20($sp)  
+	sw	$s4, 16($sp) 
+	sw 	$s5, 12($sp) 
+	sw 	$s6, 8($sp) 
+	sw 	$s7, 4($sp) 
+	sw	$ra, 0($sp)
+	
+	addi $s0, $a0, 0 # holds the head ptr of user list for traverse
+	addi $s6, $a0, 0 # holds the user lists head forever
+	addi $s7, $0, 0 # size
+	
+	addi	$a0, $0, 12 # 4 bit - hold key, 4 bit-hold copy num, 4-bit next
+	addi	$v0, $0, 9 # dynamically allocate 8 bit in memory
+	syscall
+
+	addi	$s1, $v0, 0 # headptr of the new list
+	addi	$s2, $v0, 0 # curptr of the new list
+	
+	lw $s3, 0($s0) # get the head ptr's key no
+	
+	addi $a0, $s0, 0 # pass the user lists' head addr
+	addi $a1, $s3, 0 # pass the key no
+	
+	jal sumKeyCopies 
+	addi $s5, $v0, 0 # keep the sum
+	addi $s0, $v1, 0 # get the cur ptr of the user list
+	
+	sw $s3, 0($s2) # store key in sum head
+	sw $s5, 4($s2) # store sum copy in sum head
+	addi $s7, $s7, 1 #increment size
+	
+	#beq $s0, $zero, sumListDone
+	#lw $v0, 8($s0)
+	#addi $s0, $v0, 0 # move the ptr to the next of the original list
+	j newNode
+	
+newNode:
+	beq $s0, $zero, sumListDone
+	addi $s7, $s7, 1 #increment size
+	addi	$a0, $0, 12 		
+	addi	$v0, $0, 9
+	syscall
+	sw	$v0, 8($s2)
+	addi	$s2, $v0, 0 # move to next node 
+		
+	lw $s3, 0($s0) # get the current key
+	addi $a0, $s0, 0 # pass the user lists' head addr
+	addi $a1, $s3, 0 # pass the key no
+	
+	jal sumKeyCopies 
+	addi $s5, $v0, 0 # keep the sum
+	addi $s0, $v1, 0 # get the cur ptr of the user list
+	
+	sw $s3, 0($s2) # store key in sum head
+	sw $s5, 4($s2) # store sum copy in sum head
+	
+	
+	#beq $s0, $zero, sumListDone
+	#lw $v0, 8($s0)
+	#addi $s0, $v0, 0 # move the ptr to the next of the original list
+	
+	j newNode
+	
+	
+sumKeyCopies:
+	addi	$sp, $sp, -24
+	sw	$s0, 20($sp)
+	sw	$s1, 16($sp)
+	sw	$s2, 12($sp)
+	sw	$s3, 8($sp)
+	sw	$s4, 4($sp)
+	sw	$ra, 0($sp)
+	
+	addi $s0, $a0, 0 # keeps head ptr
+	addi $s1, $a1, 0 # keeps the key
+	addi $s2, $0, 0 # keeps the sum
+	
+	j sumKeyCopiesLoop
+	
+sumKeyCopiesLoop:
+	## bgt s0 daki key istenen degerden buyuk olursa bitir, s0 i returnle
+	beq $s0, $zero, endSumKeyCopies
+	lw $v0, 0($s0) # get key 
+	bgt $v0, $s1, endSumKeyCopies
+	lw $v1, 4($s0) #get copy num
+	beq $v0, $s1, addCopy
+	
+	lw $v0, 8($s0) # get next
+	addi $s0, $v0,0
+	j sumKeyCopiesLoop
+	
+	
+addCopy:
+	add $s2, $s2, $v1 # CHANGE THIS PART THERE IS AN ARITHMATIC OVERFLOW HERE!!!
+	lw $v0, 8($s0)
+	addi $s0, $v0,0
+	j sumKeyCopiesLoop
+	
+endSumKeyCopies:
+	addi $v0, $s2, 0 # return sum
+	addi $v1, $s0, 0 # return the cur ptr of the user list
+	lw	$s0, 20($sp)
+	lw	$s1, 16($sp)
+	lw	$s2, 12($sp)
+	lw	$s3, 8($sp)
+	lw	$s4, 4($sp)
+	lw	$ra, 0($sp)
+	addi $sp, $sp, 24
+
+	jr $ra
+	
+sumListDone:	
+	sw	$zero, 8($s2)
+	addi $v0, $s7, 0 # return size
+	addi $v1, $s1, 0 # return sum list head
+	lw     $s0, 32($sp) 
+	lw	$s1, 28($sp)  
+	lw	$s2, 24($sp) 
+	lw	$s3, 20($sp)  
+	lw	$s4, 16($sp) 
+	lw 	$s5, 12($sp) 
+	lw 	$s6, 8($sp) 
+	lw 	$s7, 4($sp) 
+	lw	$ra, 0($sp)
+	
+	addi $sp, $sp, 36
+	jr $ra
+	
+printSumList:	
+	addi $v1, $a0, 0 # keeps size
+	la $a0, summaryHeader
+	addi $v0, $0,4
+	syscall
+	
+	la $a0, size
+	addi $v0, $0, 4
+	syscall 	
+	addi $a0, $v1, 0
+	addi $v0, $0, 1
+	syscall
+	
+	addi $a0, $a1, 0 # add head ptr as an argument
+	j printLinkedList
+	
